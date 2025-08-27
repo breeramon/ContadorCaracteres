@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Analisador de Texto e Contador de Caracteres</title>
+    <style>
+
+    :root {
+        --cor-fundo: #f0f2f5;
+        --cor-container: #ffffff;
+        --cor-texto-principal: #1c1e21;
+        --cor-texto-secundario: #606770;
+        --cor-borda: #ddd;
+        --cor-fundo-resultados: #f7f7f7;
+        --cor-botao-borda: #ccc;
+        --cor-botao-fundo: #f0f0f0;
+    }
+
+    body.dark-mode {
+        --cor-fundo: #18191a;
+        --cor-container: #242526;
+        --cor-texto-principal: #e4e6eb;
+        --cor-texto-secundario: #b0b3b8;
+        --cor-borda: #4d4d4d;
+        --cor-fundo-resultados: #3a3b3c;
+        --cor-botao-borda: #555;
+        --cor-botao-fundo: #4b4c4d;
+    }
+
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        padding: 20px; 
+        background-color: var(--cor-fundo); 
+        color: var(--cor-texto-principal);
+        transition: background-color 0.3s, color 0.3s;
+    }
+    .container { 
+        max-width: 700px; 
+        margin: 0 auto; 
+        background-color: var(--cor-container); 
+        padding: 2rem; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid var(--cor-borda);
+        transition: background-color 0.3s;
+        position: relative;
+    }
+    h1 { 
+        text-align: center; 
+        color: #0b57d0;
+        margin-top: 20px;
+        padding-top: 2.5rem;
+    }
+    textarea { 
+        width: 100%; 
+        height: 200px; 
+        margin-bottom: 15px; 
+        font-size: 16px; 
+        padding: 12px; 
+        box-sizing: border-box; 
+        border: 1px solid var(--cor-borda); 
+        border-radius: 6px; 
+        resize: vertical;
+        background-color: var(--cor-fundo);
+        color: var(--cor-texto-principal);
+    }
+    .resultados { 
+        display: flex; 
+        justify-content: space-around; 
+        background-color: var(--cor-fundo-resultados); 
+        padding: 15px; 
+        border-radius: 6px; 
+        text-align: center; 
+        transition: background-color 0.3s;
+    }
+    .stat h3 { 
+        margin: 0 0 5px 0; 
+        color: var(--cor-texto-secundario); 
+        font-size: 14px; 
+    }
+    .stat p { 
+        margin: 0; 
+        font-size: 24px; 
+        font-weight: bold; 
+        color: var(--cor-texto-principal); 
+    }
+
+    #toggleDarkMode {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    color: var(--cor-texto-principal);
+    }
+
+    #toggleDarkMode:hover {
+        background-color: var(--cor-fundo-resultados);
+    }
+
+    #toggleDarkMode svg {
+        width: 22px;
+        height: 22px;
+        transition: transform 0.4s ease-in-out, opacity 0.3s ease;
+    }
+
+    .sun-icon {
+        display: none;
+    }
+
+    body.dark-mode .sun-icon {
+        display: block;
+    }
+
+    body.dark-mode .moon-icon {
+        display: none;
+    }
+</style>
+</head>
+<body>
+
+    <div class="container">
+        <button id="toggleDarkMode" aria-label="Mudar tema">
+            <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        </button>
+
+        <h1>Analisador de Texto Inteligente</h1>
+        <textarea id="textoUsuario" oninput="analisarTexto()" placeholder="Digite ou cole seu texto aqui..."></textarea>
+
+        <div class="resultados">
+            <div class="stat">
+                <h3>Caracteres (com espaços)</h3>
+                <p id="comEspacos">0</p>
+            </div>
+            <div class="stat">
+                <h3>Caracteres (sem espaços)</h3>
+                <p id="semEspacos">0</p>
+            </div>
+            <div class="stat">
+                <h3>Palavras</h3>
+                <p id="palavras">0</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const API_URL = 'http://127.0.0.1:5000/analisar';
+
+    const toggleButton = document.getElementById('toggleDarkMode');
+    const body = document.body;
+
+    function aplicarTemaSalvo() {
+        const temaSalvo = localStorage.getItem('theme');
+        if (temaSalvo === 'dark') {
+            body.classList.add('dark-mode');
+        } else {
+            body.classList.remove('dark-mode');
+        }
+    }
+
+    toggleButton.addEventListener('click', () => {
+        body.classList.toggle('dark-mode');
+
+        if (body.classList.contains('dark-mode')) {
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.setItem('theme', 'light');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', aplicarTemaSalvo);
+
+    async function analisarTexto() {
+        const textoParaAnalisar = document.getElementById('textoUsuario').value;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ texto: textoParaAnalisar })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro na API: ${response.statusText}`);
+            }
+
+            const dados = await response.json();
+
+            document.getElementById('comEspacos').innerText = dados.com_espacos;
+            document.getElementById('semEspacos').innerText = dados.sem_espacos;
+            document.getElementById('palavras').innerText = dados.palavras;
+
+        } catch (error) {
+            console.error("Não foi possível conectar à API:", error);
+        }
+    }
+</script>
+</body>
+</html>
